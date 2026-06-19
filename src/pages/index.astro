@@ -1,11 +1,61 @@
 ---
-import Welcome from '../components/Welcome.astro';
-import Layout from '../layouts/Layout.astro';
+// src/pages/index.astro
+import fs from 'node:fs';
+import path from 'node:path';
+import { parse } from 'csv-parse/sync'; // Fast, synchronous parsing tool
+import BowlingLeaderboard from '../components/BowlingLeaderboard.astro';
 
-// Welcome to Astro! Wondering what to do next? Check out the Astro documentation at https://docs.astro.build
-// Don't want to use any of this? Delete everything in this file, the `assets`, `components`, and `layouts` directories, and start fresh.
+// Define the matching runtime type schema
+interface BowlingRow {
+  id: number;
+  rank: number;
+  team: string;
+  scratchTotal: number;
+  handicapTotal: number;
+  [key: string]: any;
+}
+
+// 1. Locate and read the raw CSV text file on the server
+const csvPath = path.resolve('./src/data/bowling.csv');
+const fileContent = fs.readFileSync(csvPath, 'utf-8');
+
+// 2. Parse raw text lines into an array of key-value row objects
+const rawRecords = parse(fileContent, {
+  columns: true,          // Automatically uses the first header line as object keys
+  skip_empty_lines: true  // Filters out broken trailing spaces smoothly
+});
+
+// 3. Convert numeric fields to integers so mathematical sorting keeps working
+const sanitizedData: BowlingRow[] = rawRecords.map((row: any, index: number) => {
+  const sanitizedRow: BowlingRow = {
+    id: index + 1, // Generate a unique loop key fallback
+    rank: Number(row.rank),
+    team: row.team,
+    scratchTotal: Number(row.scratchTotal),
+    handicapTotal: Number(row.handicapTotal),
+  };
+
+  // Convert any arbitrary game columns dynamically (g1, g2, g3...)
+  Object.keys(row).forEach((key) => {
+    if (!['rank', 'team', 'scratchTotal', 'handicapTotal'].includes(key)) {
+      sanitizedRow[key] = Number(row[key]);
+    }
+  });
+
+  return sanitizedRow;
+});
 ---
 
-<Layout>
-	<Welcome />
-</Layout>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Live Bowling Leaderboard</title>
+    <style>
+      body { margin: 0; padding: 0; background: #000; }
+    </style>
+  </head>
+  <body>
+    <!-- Inject parsed and typed data cleanly into your component -->
+    <BowlingLeaderboard data={sanitizedData} defaultPixelsPerSecond={40} />
+  </body>
+</html>

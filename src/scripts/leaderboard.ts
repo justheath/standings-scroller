@@ -27,7 +27,28 @@ export function initLeaderboard() {
         });
       });
 
-      // 2. THEME BUTTON LOGIC
+      // 2. HIGH SCORE CONFIGURATION INPUT FIELD LOGIC
+      const thresholdInput = parentWrapper.querySelector('#high-score-input') as HTMLInputElement;
+      if (thresholdInput) {
+        thresholdInput.addEventListener('input', () => {
+          const currentThreshold = Number(thresholdInput.value) || 0;
+          const scoreBadges = parentWrapper.querySelectorAll('.game-score');
+
+          // Scans and mutates active flashing class constraints instantly on input change
+          scoreBadges.forEach((badge) => {
+            const el = badge as HTMLElement;
+            const scoreVal = Number(el.dataset.score) || 0;
+
+            if (scoreVal >= currentThreshold) {
+              el.classList.add('high-score-flash');
+            } else {
+              el.classList.remove('high-score-flash');
+            }
+          });
+        });
+      }
+
+      // 3. THEME BUTTON LOGIC
       const themeButtons = parentWrapper.querySelectorAll('.theme-btn');
       themeButtons.forEach((btn) => {
         btn.addEventListener('click', (e) => {
@@ -42,7 +63,6 @@ export function initLeaderboard() {
       });
     }
 
-    // Freeze track loops on row hover
     scrollContainer.addEventListener('mouseenter', () => {
       isHovered = true;
       lastTimestamp = null; 

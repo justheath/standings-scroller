@@ -1,6 +1,6 @@
 ---
 // Component Script (Server-side)
-import '../styles/leaderboard.css'; // Imports the isolated styling bundle
+import '../styles/leaderboard.css'; 
 
 interface RowData {
   id: string | number;
@@ -16,34 +16,29 @@ interface Props {
   defaultPixelsPerSecond?: number; 
   rowHeightPx?: number;
   sortByRank?: 'asc' | 'desc';
+  defaultHighScoreThreshold?: number;
 }
 
 const { 
   data = [], 
-  defaultPixelsPerSecond = 35, 
-  rowHeightPx = 65, 
-  sortByRank = 'asc'
+  defaultPixelsPerSecond = 45, // Bumped slightly up to account for larger row spans
+  rowHeightPx = 98,            // SCALED: Increased 50% from 65px base to match scaled text height parameters
+  sortByRank = 'asc',
+  defaultHighScoreThreshold = 250 
 } = Astro.props;
 
-// Sort data numerically by rank
+// Rest of your pristine server compilation logic remains exactly the same...
 const sortedData = [...data].sort((a, b) => {
   return sortByRank === 'asc' ? a.rank - b.rank : b.rank - a.rank;
 });
-
-// Isolate variable game columns while ignoring structural identifiers
 const allKeys = Array.from(new Set(data.flatMap(item => Object.keys(item))));
 const dynamicKeys = allKeys.filter(key => !['id', 'team', 'rank', 'scratchTotal', 'handicapTotal'].includes(key));
-
-// Duplicate the dataset once for the infinite continuous loop canvas
 const loopingData = [...sortedData, ...sortedData];
 ---
-
-<!-- Retro Bowling Alley Main Wrapper Framework -->
+<!-- ... Rest of component structural markup code matches your previous layout wrapper file perfectly ... -->
 <div class="bowling-leaderboard-wrapper theme-neon" style={`--row-height: ${rowHeightPx}px;`}>
-  
-  <!-- TOP CONTROL BAR (Speed + Theme Selection) -->
+  <!-- Top Bar, Headers, Container Tracks Render Blocks continue normally... -->
   <div class="top-control-bar">
-    <!-- SPEED CONTROLLER -->
     <div class="control-group">
       <span class="control-label">TICKER SPEED:</span>
       <button class="control-btn speed-btn" data-multiplier="0">PAUSE</button>
@@ -51,8 +46,10 @@ const loopingData = [...sortedData, ...sortedData];
       <button class="control-btn speed-btn" data-multiplier="2">2X</button>
       <button class="control-btn speed-btn" data-multiplier="3">3X</button>
     </div>
-
-    <!-- THEME OPTIONS -->
+    <div class="control-group">
+      <label class="control-label" for="high-score-input">HIGH SCORE ALERT:</label>
+      <input type="number" id="high-score-input" class="threshold-input" value={defaultHighScoreThreshold} min="0" max="300" placeholder="250" />
+    </div>
     <div class="control-group">
       <span class="control-label">BOARD THEME:</span>
       <button class="control-btn theme-btn active" data-theme="neon">NEON ARCADE</button>
@@ -62,75 +59,39 @@ const loopingData = [...sortedData, ...sortedData];
     </div>
   </div>
 
-  <!-- STICKY TABLE HEADER -->
   <div class="table-header">
     <div class="rank-column">Rank</div>
     <div class="team-column">Team Name</div>
-    
     <div class="dynamic-values">
-      {dynamicKeys.map((key) => (
-        <span class={`header-game-label game-${key}`}>{key.toUpperCase()}</span>
-      ))}
+      {dynamicKeys.map((key) => <span class={`header-game-label game-${key}`}>{key.toUpperCase()}</span>)}
     </div>
-    
     <div class="total-column scratch-header">Scratch</div>
     <div class="total-column">Handicap</div>
   </div>
 
-  <!-- SCROLLING TRACK ENGINE CONTAINER -->
   <div class="autoscroll-container" data-base-speed={defaultPixelsPerSecond}>
     <div class="autoscroll-track">
       {loopingData.map((row) => (
         <div class="autoscroll-row">
-          
-          <!-- COLUMN 1: Rank Badge -->
-          <div class="rank-column">
-            <span class="rank-tag">#{row.rank}</span>
-          </div>
-
-          
-          <div class="team-column">
-            <strong class="row-team-text">{row.team}</strong>
-          </div>
-
-          <!-- COLUMN 3: Intermediate Game Badges -->
+          <div class="rank-column"><span class="rank-tag">#{row.rank}</span></div>
+          <div class="team-column"><strong class="row-team-text">{row.team}</strong></div>
           <div class="dynamic-values">
             {dynamicKeys.map((key) => {
               const score = row[key];
-              const isHighScore = score >= 250; 
-              return (
-                score !== undefined && (
-                  <span class={`variable-field game-${key} ${isHighScore ? 'high-score-flash' : ''}`}>
-                    {score}
-                  </span>
-                )
-              );
+              const isHighScore = score >= defaultHighScoreThreshold; 
+              return score !== undefined && <span class={`variable-field game-score game-${key} ${isHighScore ? 'high-score-flash' : ''}`} data-score={score}>{score}</span>;
             })}
           </div>
-
-          <!-- COLUMN 4: Scratch Total Summary -->
-          <div class="total-column scratch-cell">
-            <span class="scratch-total">{row.scratchTotal}</span>
-          </div>
-
-          <!-- COLUMN 5: Weighted Handicap Total -->
-          <div class="total-column">
-            <strong class="handicap-total">{row.handicapTotal}</strong>
-          </div>
-
+          <div class="total-column scratch-cell"><span class="scratch-total">{row.scratchTotal}</span></div>
+          <div class="total-column"><strong class="handicap-total">{row.handicapTotal}</strong></div>
         </div>
       ))}
     </div>
   </div>
 </div>
 
-<!-- CLIENT-SIDE EVENT MODULE INJECTIONS -->
 <script>
   import { initLeaderboard } from '../scripts/leaderboard.ts';
-
-  // Initialize loop bindings on page load
   initLeaderboard();
-
-  // Re-bind actions securely if utilizing Astro's internal View Transitions Router
   document.addEventListener('astro:after-swap', initLeaderboard);
 </script>
