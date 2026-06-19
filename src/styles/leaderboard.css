@@ -34,7 +34,7 @@
   --flash-glow: 0 0 14px #ffe600;
 }
 
-/* 3. Classic Retro Woodpaneled Bowling Alley */
+/* 3. Classic Woodpaneled Alley */
 .theme-classic {
   --bg-dark: #2d1a10;
   --bg-stripe: #3c2417; 
@@ -50,7 +50,7 @@
   --flash-glow: 0 0 10px #f43f5e;
 }
 
-/* 4. Matrix Green Terminal */
+/* 4. Matrix Terminal */
 .theme-matrix {
   --bg-dark: #000000;
   --bg-stripe: #050505;
@@ -81,10 +81,31 @@
   transition: background-color 0.3s ease;
 }
 
+/* NEW FEATURE: Brand Tournament Banner Element */
+.tournament-title-banner {
+  width: 100%;
+  background: linear-gradient(180deg, #11111e 0%, #000000 100%);
+  padding: 16px 24px;
+  text-align: center;
+  border-bottom: 2px dashed var(--panel-border);
+  box-sizing: border-box;
+  z-index: 15;
+}
+
+.tournament-heading {
+  margin: 0;
+  font-size: 2.25rem;
+  font-weight: 900;
+  color: #ffffff;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  text-shadow: 0 0 10px var(--accent-blue), 0 0 20px var(--accent-blue);
+}
+
 .top-control-bar {
   width: 100%;
   background-color: #000000;
-  padding: 12px 24px; /* Increased slightly to balance layout text weights */
+  padding: 12px 24px;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -102,7 +123,7 @@
 }
 
 .control-label {
-  font-size: 0.95rem; /* Scaled from 0.65rem */
+  font-size: 0.95rem;
   color: #94a3b8;
   font-weight: bold;
   letter-spacing: 0.5px;
@@ -113,9 +134,9 @@
   background: #11111a;
   border: 1px solid var(--accent-blue);
   color: var(--accent-blue);
-  padding: 6px 16px; /* Scaled padding up */
+  padding: 6px 16px;
   font-family: inherit;
-  font-size: 1rem; /* Scaled from 0.75rem */
+  font-size: 1rem;
   font-weight: bold;
   cursor: pointer;
   border-radius: 4px;
@@ -138,13 +159,12 @@
   border: 1px solid var(--accent-blue);
   color: var(--accent-green);
   font-family: inherit;
-  font-size: 1.2rem; /* Scaled from 0.85rem */
+  font-size: 1.2rem;
   font-weight: bold;
-  width: 80px; /* Made wider for bigger numerals */
+  width: 80px;
   padding: 5px 8px;
   border-radius: 4px;
   text-align: center;
-  transition: all 0.2s ease;
 }
 
 .threshold-input:focus {
@@ -159,21 +179,36 @@
   margin: 0;
 }
 
-/* Sticky Headers Text Weights */
-.table-header {
-  width: 100%;
-  height: 65px; /* Increased to support bigger text elements */
-  padding: 0 24px;
-  display: flex;
+/* 
+   NEW FEATURE: RECONSTRUCTED CSS GRID TRACK DEFINITIONS
+   Uses dynamic template mapping columns that scale automatically if names grow.
+*/
+.grid-row-layout {
+  display: grid;
   align-items: center;
+  box-sizing: border-box;
+  padding: 0 24px;
+  gap: 24px;
+  width: 100%;
+  
+  /* 
+     Dynamic Grid Definitions:
+     - Rank track: Fixed 95px
+     - Team Name track: Automatically expands up to 2.5 parts of available room (minmax prevents shrinking)
+     - Game Score tracks container: Flexibly takes remaining tracking spaces
+     - Totals tracks: Fixed 165px tracks anchored tightly at the far edge
+  */
+  grid-template-columns: 95px minmax(260px, 2.5fr) minmax(200px, 4fr) 165px 165px;
+}
+
+.table-header {
+  height: 65px;
   background-color: var(--bg-header);
   color: var(--accent-blue);
   border-bottom: 2px solid var(--accent-pink);
   box-shadow: var(--header-glow);
-  box-sizing: border-box;
-  gap: 24px; /* Widened slightly to balance grid scales */
   font-weight: bold;
-  font-size: 1.4rem; /* Scaled from 0.95rem */
+  font-size: 1.4rem;
   text-transform: uppercase;
   letter-spacing: 1px;
   z-index: 10;
@@ -194,15 +229,9 @@
 
 .autoscroll-row {
   height: var(--row-height);
-  width: 100%;
-  padding: 0 24px;
-  display: flex;
-  align-items: center;
   border-bottom: 1px solid var(--panel-border);
-  box-sizing: border-box;
   background-color: var(--bg-dark);
   color: var(--text-main);
-  gap: 24px;
   transition: background-color 0.2s ease;
 }
 
@@ -215,31 +244,37 @@
   border-color: var(--accent-blue);
 }
 
-/* 50% Scaled Tracking Widths to prevent overflowing larger typography shapes */
-.rank-column { width: 95px; flex-shrink: 0; }
-.team-column { width: 360px; flex-shrink: 0; display: flex; align-items: center; }
-.dynamic-values { display: flex; gap: 16px; align-items: center; flex-grow: 1; }
-.total-column { width: 165px; flex-shrink: 0; text-align: right; }
+/* Internal Inner Game Boxes Grid Track Blueprint */
+.games-flex-track {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.right-align {
+  text-align: right;
+}
 
 .rank-tag { 
-  font-size: 1.55rem; /* Scaled from 1.05rem */
+  font-size: 1.55rem; 
   color: var(--accent-pink); 
   font-weight: 700;
 }
 
 .row-team-text { 
-  font-size: 1.65rem; /* Scaled from 1.1rem */
+  font-size: 1.65rem; 
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.header-game-label { width: 68px; text-align: center; }
+.header-game-label { width: 68px; text-align: center; font-weight: bold; }
 
 .variable-field {
-  width: 68px; /* Scaled up from 45px to support bigger score fonts */
+  width: 68px; 
   text-align: center;
-  font-size: 1.5rem; /* Scaled from 1rem */
+  font-size: 1.5rem; 
   padding: 6px 0;
   font-weight: bold;
   border-radius: 6px;
@@ -249,7 +284,6 @@
   box-sizing: border-box;
 }
 
-/* HIGH SCORE FLASH ANIMATION */
 .high-score-flash {
   color: var(--bg-dark) !important;
   background-color: var(--accent-pink) !important;
@@ -262,27 +296,43 @@
   to { box-shadow: var(--flash-glow); }
 }
 
-.scratch-total { font-size: 1.55rem; color: var(--text-muted); } /* Scaled from 1.05rem */
+.scratch-total { font-size: 1.55rem; color: var(--text-muted); }
 
 .handicap-total { 
-  font-size: 1.85rem; /* Scaled from 1.25rem */
+  font-size: 1.85rem; 
   color: var(--accent-green);
 }
 
-/* ADJUSTED BREAKPOINTS FOR ENLARGED TYPOGRAPHY TRACKS */
-@media (max-width: 1200px) {
-  .game-g1, .game-g2, .game-g3 { display: none !important; }
+/* RESPONSIVE GRID LAYOUT SYSTEM BREAKPOINTS */
+/* Update the tablet section breakpoint to hide G1-G6 on narrower screens */
+@media (max-width: 1350px) {
+  .game-g1, .game-g2, .game-g3, .game-g4, .game-g5, .game-g6 { 
+    display: none !important; 
+  }
 }
 
-@media (max-width: 850px) {
-  .game-g4, .game-g5 { display: none !important; }
-  .team-column { width: 220px; }
-  .scratch-header, .scratch-cell { display: none !important; }
+@media (max-width: 950px) {
+  .game-g6, .game-g7, .game-g8 { 
+    display: none !important; 
+  }
+  .grid-row-layout {
+    /* Retains Rank, Team, Game 9 cell tracking, and Handicap Total */
+    grid-template-columns: 80px minmax(180px, 2fr) minmax(68px, 1fr) 0px 130px;
+    gap: 16px;
+  }
+  .scratch-header, .scratch-cell { 
+    display: none !important; 
+  }
 }
 
 @media (max-width: 550px) {
   .game-g6 { display: none !important; }
-  .team-column { width: 150px; }
-  .autoscroll-row, .table-header { padding: 0 12px; gap: 12px; }
+  .grid-row-layout {
+    grid-template-columns: 65px 1fr 100px;
+    gap: 12px;
+  }
+  .games-flex-track, .dynamic-values { display: none !important; }
+  .autoscroll-row, .table-header { padding: 0 12px; }
   .top-control-bar { justify-content: center; }
+  .tournament-heading { font-size: 1.65rem; }
 }
