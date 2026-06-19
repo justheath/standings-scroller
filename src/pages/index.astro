@@ -1,7 +1,5 @@
 ---
 // src/pages/index.astro
-import fs from 'node:fs';
-import path from 'node:path';
 import { parse } from 'csv-parse/sync'; // Fast, synchronous parsing tool
 import BowlingLeaderboard from '../components/BowlingLeaderboard.astro';
 
@@ -15,47 +13,74 @@ interface BowlingRow {
   [key: string]: any;
 }
 
-// 1. Locate and read the raw CSV text file on the server
-const csvPath = path.resolve('./src/data/bowling.csv');
-const fileContent = fs.readFileSync(csvPath, 'utf-8');
+// CONFIGURATION: Replace this with your actual public CSV endpoint URL
+const CSV_URL = "https://c-ubowl.com/wp-content/uploads/2026/06/bowling.csv";
 
-// 2. Parse raw text lines into an array of key-value row objects
-const rawRecords = parse(fileContent, {
-  columns: true,          // Automatically uses the first header line as object keys
-  skip_empty_lines: true  // Filters out broken trailing spaces smoothly
-});
+let sanitizedData: BowlingRow[] = [];
+let errorMessage = "";
 
-// 3. Convert numeric fields to integers so mathematical sorting keeps working
-const sanitizedData: BowlingRow[] = rawRecords.map((row: any, index: number) => {
-  const sanitizedRow: BowlingRow = {
-    id: index + 1, // Generate a unique loop key fallback
-    rank: Number(row.rank),
-    team: row.team,
-    scratchTotal: Number(row.scratchTotal),
-    handicapTotal: Number(row.handicapTotal),
-  };
+try {
+  // 1. Fetch the raw CSV text stream from the remote server
+  const response = await fetch(CSV_URL);
+  
+  if (!response.ok) {
+    throw new Error(`Failed to fetch dataset. Status: ${response.status}`);
+  }
 
-  // Convert any arbitrary game columns dynamically (g1, g2, g3...)
-  Object.keys(row).forEach((key) => {
-    if (!['rank', 'team', 'scratchTotal', 'handicapTotal'].includes(key)) {
-      sanitizedRow[key] = Number(row[key]);
-    }
+  const fileContent = await response.text();
+
+  // 2. Parse the remote text into an array of key-value row objects
+  const rawRecords = parse(fileContent, {
+    columns: true,          // Automatically uses the first header line as object keys
+    skip_empty_lines: true  // Filters out broken trailing spaces smoothly
   });
 
-  return sanitizedRow;
-});
+  // 3. Convert numeric fields to integers so mathematical sorting keeps working
+  sanitizedData = rawRecords.map((row: any, index: number) => {
+    const sanitizedRow: BowlingRow = {
+      id: index + 1, // Generate a unique loop key fallback
+      rank: Number(row.rank),
+      team: row.team,
+      scratchTotal: Number(row.scratchTotal),
+      handicapTotal: Number(row.handicapTotal),
+    };
+
+    // Convert any arbitrary game columns dynamically (g1 through g9...)
+    Object.keys(row).forEach((key) => {
+      if (!['rank', 'team', 'scratchTotal', 'handicapTotal'].includes(key)) {
+        sanitizedRow[key] = Number(row[key]);
+      }
+    });
+
+    return sanitizedRow;
+  });
+
+} catch (error: any) {
+  console.error("Leaderboard Fetch Error:", error.message);
+  errorMessage = "Unable to load tournament live scores. Please refresh or try again later.";
+}
 ---
 
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <title>Live Bowling Leaderboard</title>
+    <title>Live Tournament Leaderboard</title>
     <style>
-      body { margin: 0; padding: 0; background: #000; }
+      body { margin: 0; padding: 0; background: #09090e; color: #fff; font-family: sans-serif; }
+      .error-fallback { display: flex; justify-content: center; align-items: center; height: 100vh; font-size: 1.5rem; color: #ff2a74; text-transform: uppercase; }
     </style>
   </head>
   <body>
-    <!-- Inject parsed and typed data cleanly into your component -->
-    <BowlingLeaderboard data={sanitizedData} defaultPixelsPerSecond={40} />
+    {errorMessage ? (
+      <!-- Safe Error Boundary Fallback rendering -->
+      <div class="error-fallback">{errorMessage}</div>
+    ) : (
+      <!-- Inject dynamically fetched and parsed data cleanly into your component -->
+      <BowlingLeaderboard 
+        data={sanitizedData} 
+        tournamentName="World Bowling Open" 
+        defaultPixelsPerSecond={45} 
+      />
+    )}
   </body>
 </html>
