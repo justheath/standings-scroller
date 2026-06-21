@@ -1,0 +1,163 @@
+/* src/styles/hub.css */
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: #050508;
+  color: #ffffff;
+  font-family: 'Courier New', Courier, monospace;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  box-sizing: border-box;
+}
+
+.hub-container {
+  width: 100%;
+  max-width: 900px;
+  padding: 40px 24px;
+  text-align: center;
+}
+
+h1 {
+  font-size: 2.5rem;
+  color: #00f0ff;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  margin-bottom: 8px;
+  text-shadow: 0 0 10px rgba(0, 240, 255, 0.4);
+}
+
+.subtitle {
+  color: #94a3b8;
+  font-size: 1rem;
+  margin-bottom: 48px;
+  text-transform: uppercase;
+}
+
+.subtitle2 {
+  color: #94a3b8;
+  font-size: 1rem;
+  margin-bottom: 18px;
+  text-transform:none;
+}
+
+.tournament-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.tournament-card {
+  background-color: #11111a;
+  border: 1px solid rgba(0, 240, 255, 0.15);
+  border-radius: 8px;
+  padding: 24px;
+  text-align: left;
+  text-decoration: none;
+  color: inherit;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  gap: 20px;
+}
+
+.tournament-card:hover {
+  border-color: #ff2a74;
+  background-color: #161625;
+  box-shadow: 0 0 20px rgba(255, 42, 116, 0.25);
+  transform: translateY(-2px);
+}
+
+.card-info {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex-grow: 1;
+}
+
+.card-info h2 {
+  margin: 0;
+  font-size: 1.4rem;
+  color: #ffffff;
+  text-transform: uppercase;
+}
+
+.tournament-card:hover .card-info h2 {
+  color: #ff2a74;
+}
+
+.card-info p {
+  margin: 0;
+  font-size: 0.95rem;
+  color: #94a3b8;
+  line-height: 1.5;
+}
+
+/* Metadata Info Row Alignments */
+/* Update this block inside src/styles/hub.css */
+
+.metadata-row {
+  display: flex;
+  flex-direction: column; /* FORCES Venue and Schedule to stack vertically on separate lines */
+  align-items: flex-start; /* Aligns all metadata elements neatly to the left margin */
+  gap: 8px; /* Balanced spacing between the stacked lines */
+  margin-top: 6px;
+  font-size: 0.8rem;
+}
+
+.meta-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.meta-label {
+  color: #ff2a74;
+  font-weight: bold;
+  letter-spacing: 0.5px;
+}
+
+.meta-value {
+  color: #00f0ff;
+  background-color: rgba(0, 240, 255, 0.05);
+  border: 1px dashed rgba(0, 240, 255, 0.2);
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.view-ticker-badge {
+  background: #11111a;
+  border: 1px solid #00f0ff;
+  color: #00f0ff;
+  padding: 8px 16px;
+  font-size: 0.85rem;
+  font-weight: bold;
+  text-transform: uppercase;
+  border-radius: 4px;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+}
+
+.tournament-card:hover .view-ticker-badge {
+  background: #00f0ff;
+  color: #050508;
+  box-shadow: 0 0 10px #00f0ff;
+}
+
+@media (max-width: 600px) {
+  .tournament-card {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .view-ticker-badge {
+    width: 100%;
+    text-align: center;
+    box-sizing: border-box;
+  }
+  h1 {
+    font-size: 1.8rem;
+  }
+}

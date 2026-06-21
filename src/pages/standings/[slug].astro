@@ -1,0 +1,84 @@
+---
+// src/pages/standings/[slug].astro
+import { parse } from 'csv-parse/sync';
+import { tournaments } from '../../config/tournaments';
+import BowlingLeaderboard from '../../components/BowlingLeaderboard.astro';
+
+export async function getStaticPaths() {
+  return tournaments.map((t) => ({
+    params: { slug: t.slug },
+    props: { tournament: t }
+  }));
+}
+
+const { tournament } = Astro.props;
+
+interface BowlingRow {
+  id: number;
+  rank: number;
+  team: string;
+  scratchTotal: number;
+  handicapTotal: number;
+  [key: string]: any;
+}
+
+let sanitizedData: BowlingRow[] = [];
+let errorMessage = "";
+
+try {
+  // Build-time execution block mapping
+  console.log(`Fetching dataset for tournament: ${tournament.name} from URL: ${tournament.csvUrl}`);
+  const response = await fetch(tournament.csvUrl);
+  if (!response.ok) throw new Error();
+
+  const fileContent = await response.text();
+  const rawRecords = parse(fileContent, { columns: true, skip_empty_lines: true });
+
+  sanitizedData = rawRecords.map((row: any, index: number) => {
+    const sanitizedRow: BowlingRow = {
+      id: index + 1,
+      rank: Number(row.rank),
+      team: row.team,
+      scratchTotal: Number(row.scratchTotal),
+      handicapTotal: Number(row.handicapTotal),
+    };
+    Object.keys(row).forEach((key) => {
+      if (!['rank', 'team', 'scratchTotal', 'handicapTotal'].includes(key)) {
+        sanitizedRow[key] = Number(row[key]);
+      }
+    });
+    return sanitizedRow;
+  });
+} catch {
+  errorMessage = `Unable to fetch initial static values for "${tournament.name}".`;
+}
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{tournament.name} - Live Leaderboard</title>
+    <style>
+      body { margin: 0; padding: 0; background: #09090e; color: #fff; font-family: sans-serif; }
+      .error-boundary { display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100vh; gap: 20px; font-family: monospace; }
+      .error-text { font-size: 1.3rem; color: #ff2a74; text-transform: uppercase; text-align: center; }
+      .back-btn { background: transparent; border: 1px solid #00f0ff; color: #00f0ff; padding: 10px 20px; font-weight: bold; cursor: pointer; text-decoration: none; border-radius: 4px; }
+    </style>
+  </head>
+  <body>
+    {errorMessage ? (
+      <div class="error-boundary">
+        <div class="error-text">{errorMessage}</div>
+        <a href={import.meta.env.BASE_URL} class="back-btn">← Return to Hub</a>
+      </div>
+    ) : (
+      <BowlingLeaderboard 
+        data={sanitizedData} 
+        tournamentName={tournament.name}
+        csvUrl={tournament.csvUrl}
+        defaultPixelsPerSecond={45} 
+      />
+    )}
+  </body>
+</html>

@@ -1,3 +1,5 @@
+// src/scripts/leaderboard.ts
+
 export function initLeaderboard() {
   const containers = document.querySelectorAll('.autoscroll-container');
   const boardWrappers = document.querySelectorAll('.bowling-leaderboard-wrapper');
@@ -5,79 +7,178 @@ export function initLeaderboard() {
   containers.forEach((container, index) => {
     const scrollContainer = container as HTMLElement;
     const baseSpeed = Number(scrollContainer.dataset.baseSpeed) || 35; 
-    const parentWrapper = boardWrappers[index];
+    const parentWrapper = boardWrappers[index] as HTMLElement;
     
+    // Read the remote target CSV URL passed from the template prop
+    const remoteCsvUrl = scrollContainer.getAttribute('data-csv-url');
+
     let currentScrollTop = 0;
     let lastTimestamp: number | null = null;
     let animationFrameId: number;
     let isHovered = false;
     let speedMultiplier = 1; 
 
+    // Handle user controllers (Speed, High Score Input, Themes)
     if (parentWrapper) {
-      // 1. SPEED BUTTON LOGIC
       const speedButtons = parentWrapper.querySelectorAll('.speed-btn');
       speedButtons.forEach((btn) => {
         btn.addEventListener('click', (e) => {
           const target = e.currentTarget as HTMLButtonElement;
           speedButtons.forEach(b => b.classList.remove('active'));
           target.classList.add('active');
-          
           speedMultiplier = Number(target.dataset.multiplier);
           lastTimestamp = null; 
         });
       });
 
-      // 2. HIGH SCORE CONFIGURATION INPUT FIELD LOGIC
       const thresholdInput = parentWrapper.querySelector('#high-score-input') as HTMLInputElement;
       if (thresholdInput) {
-        thresholdInput.addEventListener('input', () => {
-          const currentThreshold = Number(thresholdInput.value) || 0;
-          const scoreBadges = parentWrapper.querySelectorAll('.game-score');
-
-          // Scans and mutates active flashing class constraints instantly on input change
-          scoreBadges.forEach((badge) => {
-            const el = badge as HTMLElement;
-            const scoreVal = Number(el.dataset.score) || 0;
-
-            if (scoreVal >= currentThreshold) {
-              el.classList.add('high-score-flash');
-            } else {
-              el.classList.remove('high-score-flash');
-            }
-          });
-        });
+        thresholdInput.addEventListener('input', () => updateHighScoreVisuals(parentWrapper, Number(thresholdInput.value)));
       }
 
-      // 3. THEME BUTTON LOGIC
       const themeButtons = parentWrapper.querySelectorAll('.theme-btn');
       themeButtons.forEach((btn) => {
         btn.addEventListener('click', (e) => {
           const target = e.currentTarget as HTMLButtonElement;
           themeButtons.forEach(b => b.classList.remove('active'));
           target.classList.add('active');
-          
-          const newTheme = target.dataset.theme;
-          parentWrapper.className = `bowling-leaderboard-wrapper theme-${newTheme}`;
+          parentWrapper.className = `bowling-leaderboard-wrapper theme-${target.dataset.theme}`;
           lastTimestamp = null;
         });
       });
     }
 
-    scrollContainer.addEventListener('mouseenter', () => {
-      isHovered = true;
-      lastTimestamp = null; 
-    });
-    
-    scrollContainer.addEventListener('mouseleave', () => {
-      isHovered = false;
-    });
+    // ----------------------------------------------------
+    // LIVE STATIC HOST POLLING ENGINE
+    // ----------------------------------------------------
+    async function pollLiveScores() {
+      if (!remoteCsvUrl || isHovered) return;
+
+      try {
+        // 1. CRITICAL: Remove the manual string appending separator logic completely. 
+        // Request the exact, clean URL to avoid Google's 307 redirect loops.
+        const response = await fetch(remoteCsvUrl, {
+          method: 'GET',
+          // 2. FORCE CACHE BYPASS: Instructs the browser to fetch directly from the network 
+          // without triggering a 307 redirect from Google's servers.
+          cache: 'no-store', 
+          redirect: 'follow',
+          headers: {
+            'Accept': 'text/csv, text/plain, */*'
+          }
+        });
+
+        if (!response.ok) {
+          console.warn(`Google Sheets connection throttled. Code: ${response.status}`);
+          return;
+        }
+        
+        const csvText = await response.text();
+        
+        // Safety lock: Verify the response isn't a login screen html error page block
+        if (csvText.trim().startsWith('<!DOCTYPE html>')) {
+          console.error("CORS Fault: Verify your Google Sheet is still set to 'Public' and Published to Web.");
+          return;
+        }
+
+        const freshTeams = parseCsvOnClient(csvText);
+        if (freshTeams.length === 0) return;
+
+        // Mirror data to account for the duplicated infinite scrolling row track canvas
+        const loopingTeams = [...freshTeams, ...freshTeams];
+        const uiRows = scrollContainer.querySelectorAll('.autoscroll-row');
+        const thresholdInput = parentWrapper?.querySelector('#high-score-input') as HTMLInputElement;
+        const currentThreshold = thresholdInput ? Number(thresholdInput.value) : 250;
+
+        loopingTeams.forEach((teamData, rowIndex) => {
+          const rowEl = uiRows[rowIndex] as HTMLElement;
+          if (!rowEl) return;
+
+          const titleEl = rowEl.querySelector('.row-team-text');
+          if (titleEl && titleEl.textContent !== teamData.team) titleEl.textContent = teamData.team;
+
+          const rankEl = rowEl.querySelector('.rank-tag');
+          if (rankEl && rankEl.textContent !== `#${teamData.rank}`) rankEl.textContent = `#${teamData.rank}`;
+
+          const scratchEl = rowEl.querySelector('.scratch-total');
+          if (scratchEl && scratchEl.textContent !== String(teamData.scratchTotal)) scratchEl.textContent = String(teamData.scratchTotal);
+
+          const handicapEl = rowEl.querySelector('.handicap-total');
+          if (handicapEl && handicapEl.textContent !== String(teamData.handicapTotal)) handicapEl.textContent = String(teamData.handicapTotal);
+
+          // Loop over individual games dynamically (g1 to g9)
+          Object.keys(teamData).forEach((key) => {
+            if (!['team', 'rank', 'scratchTotal', 'handicapTotal'].includes(key)) {
+              const cell = rowEl.querySelector(`.game-${key}`);
+              if (cell) {
+                const currentScore = teamData[key];
+                if (cell.textContent !== String(currentScore)) {
+                  cell.textContent = String(currentScore);
+                  cell.setAttribute('data-score', String(currentScore));
+                }
+              }
+            }
+          });
+        });
+
+        if (parentWrapper) updateHighScoreVisuals(parentWrapper, currentThreshold);
+      } catch (err) {
+        console.warn("Background refresh throttled:", err);
+      }
+    }
+
+    // Zero-dependency client-side CSV parser
+    function parseCsvOnClient(text: string) {
+      const lines = text.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+      if (lines.length < 2) return [];
+
+      const headers = lines[0].split(',');
+      const records: any[] = [];
+
+      for (let i = 1; i < lines.length; i++) {
+        const columns = lines[i].split(',');
+        const obj: any = {};
+        
+        headers.forEach((header, colIndex) => {
+          const val = columns[colIndex];
+          if (header === 'team') {
+            obj[header] = val;
+          } else {
+            obj[header] = Number(val) || 0;
+          }
+        });
+        records.push(obj);
+      }
+
+      // Keep rows properly ordered mathematically by rank
+      return records.sort((a, b) => a.rank - b.rank);
+    }
+
+    function updateHighScoreVisuals(wrapper: HTMLElement, threshold: number) {
+      const scoreBadges = wrapper.querySelectorAll('.game-score');
+      scoreBadges.forEach((badge) => {
+        const el = badge as HTMLElement;
+        const scoreVal = Number(el.dataset.score) || 0;
+        if (scoreVal >= threshold) {
+          el.classList.add('high-score-flash');
+        } else {
+          el.classList.remove('high-score-flash');
+        }
+      });
+    }
+
+    // Poll the raw data source every 5 minutes to keep the leaderboard updated in near real-time without needing a full page refresh.
+    const pollingInterval = setInterval(pollLiveScores, 300000);
+
+    // Continuous Animation Loops Frame Engine Tracking
+    scrollContainer.addEventListener('mouseenter', () => { isHovered = true; lastTimestamp = null; });
+    scrollContainer.addEventListener('mouseleave', () => { isHovered = false; });
 
     function step(timestamp: number) {
       if (isHovered || speedMultiplier === 0) {
         animationFrameId = requestAnimationFrame(step);
         return;
       }
-
       if (!lastTimestamp) lastTimestamp = timestamp;
       const elapsedSeconds = (timestamp - lastTimestamp) / 1000;
       lastTimestamp = timestamp;
@@ -85,15 +186,17 @@ export function initLeaderboard() {
       const halfHeight = scrollContainer.scrollHeight / 2;
       currentScrollTop += (baseSpeed * speedMultiplier) * elapsedSeconds;
 
-      if (currentScrollTop >= halfHeight) {
-        currentScrollTop -= halfHeight;
-      }
-
+      if (currentScrollTop >= halfHeight) currentScrollTop -= halfHeight;
       scrollContainer.scrollTop = currentScrollTop;
       animationFrameId = requestAnimationFrame(step);
     }
 
     animationFrameId = requestAnimationFrame(step);
-    scrollContainer.addEventListener('destroy', () => cancelAnimationFrame(animationFrameId));
+    
+    // Component lifecycle unmounting event listener cleanups
+    scrollContainer.addEventListener('destroy', () => {
+      cancelAnimationFrame(animationFrameId);
+      clearInterval(pollingInterval);
+    });
   });
 }

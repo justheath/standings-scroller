@@ -1,86 +1,56 @@
 ---
 // src/pages/index.astro
-import { parse } from 'csv-parse/sync'; // Fast, synchronous parsing tool
-import BowlingLeaderboard from '../components/BowlingLeaderboard.astro';
-
-// Define the matching runtime type schema
-interface BowlingRow {
-  id: number;
-  rank: number;
-  team: string;
-  scratchTotal: number;
-  handicapTotal: number;
-  [key: string]: any;
-}
-
-// CONFIGURATION: Replace this with your actual public CSV endpoint URL
-const CSV_URL = "https://c-ubowl.com/wp-content/uploads/2026/06/bowling.csv";
-
-let sanitizedData: BowlingRow[] = [];
-let errorMessage = "";
-
-try {
-  // 1. Fetch the raw CSV text stream from the remote server
-  const response = await fetch(CSV_URL);
-  
-  if (!response.ok) {
-    throw new Error(`Failed to fetch dataset. Status: ${response.status}`);
-  }
-
-  const fileContent = await response.text();
-
-  // 2. Parse the remote text into an array of key-value row objects
-  const rawRecords = parse(fileContent, {
-    columns: true,          // Automatically uses the first header line as object keys
-    skip_empty_lines: true  // Filters out broken trailing spaces smoothly
-  });
-
-  // 3. Convert numeric fields to integers so mathematical sorting keeps working
-  sanitizedData = rawRecords.map((row: any, index: number) => {
-    const sanitizedRow: BowlingRow = {
-      id: index + 1, // Generate a unique loop key fallback
-      rank: Number(row.rank),
-      team: row.team,
-      scratchTotal: Number(row.scratchTotal),
-      handicapTotal: Number(row.handicapTotal),
-    };
-
-    // Convert any arbitrary game columns dynamically (g1 through g9...)
-    Object.keys(row).forEach((key) => {
-      if (!['rank', 'team', 'scratchTotal', 'handicapTotal'].includes(key)) {
-        sanitizedRow[key] = Number(row[key]);
-      }
-    });
-
-    return sanitizedRow;
-  });
-
-} catch (error: any) {
-  console.error("Leaderboard Fetch Error:", error.message);
-  errorMessage = "Unable to load tournament live scores. Please refresh or try again later.";
-}
+import { tournaments, siteConfig } from '../config/tournaments';
+import '../styles/hub.css'; // SCALED: Imports the decoupled hub layout styles
 ---
 
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <title>Live Tournament Leaderboard</title>
-    <style>
-      body { margin: 0; padding: 0; background: #09090e; color: #fff; font-family: sans-serif; }
-      .error-fallback { display: flex; justify-content: center; align-items: center; height: 100vh; font-size: 1.5rem; color: #ff2a74; text-transform: uppercase; }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{siteConfig.tabName}</title>
   </head>
   <body>
-    {errorMessage ? (
-      <!-- Safe Error Boundary Fallback rendering -->
-      <div class="error-fallback">{errorMessage}</div>
-    ) : (
-      <!-- Inject dynamically fetched and parsed data cleanly into your component -->
-      <BowlingLeaderboard 
-        data={sanitizedData} 
-        tournamentName="World Bowling Open" 
-        defaultPixelsPerSecond={45} 
-      />
-    )}
+    <div class="hub-container">
+      <h1>{siteConfig.pageTitle}</h1>
+      <div class="subtitle">Select an active tournament to launch the leaderboard</div>
+      <div class="subtitle2">Scores may take up to 5 minutes to update</div>
+      
+      <div class="tournament-grid">
+        {tournaments.map((tournament) => (
+          <a href={`${import.meta.env.BASE_URL.replace(/\/$/, '')}/standings/${tournament.slug}`} class="tournament-card">
+            <div class="card-info">
+              <h2>{tournament.name}</h2>
+              <p>{tournament.description}</p>
+              
+              <!-- TOURNAMENT METADATA CLUSTER -->
+              <div class="metadata-row">
+                <!-- Venue Location -->
+                <div class="meta-item">
+                  <span class="meta-label">VENUE:</span>
+                  <span class="meta-value">{tournament.location}</span>
+                </div>
+
+                <!-- Schedule Range Badge List -->
+                <div class="meta-item">
+                  <span class="meta-label">SCHEDULE:</span>
+                  {Array.isArray(tournament.dates) ? (
+                    <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                      {tournament.dates.map((date) => (
+                        <span class="meta-value">{date}</span>
+                      ))}
+                    </div>
+                  ) : (
+                    <span class="meta-value">{tournament.dates}</span>
+                  )}
+                </div>
+              </div>
+
+            </div>
+            <div class="view-ticker-badge">View Leaderboard</div>
+          </a>
+        ))}
+      </div>
+    </div>
   </body>
 </html>
