@@ -7,9 +7,11 @@ export function initLeaderboard() {
   containers.forEach((container, index) => {
     const scrollContainer = container as HTMLElement;
     const baseSpeed = Number(scrollContainer.dataset.baseSpeed) || 35; 
+    
+    // Type cast the generic Element to an HTMLElement to satisfy TypeScript
     const parentWrapper = boardWrappers[index] as HTMLElement;
     
-    // Read the remote target CSV URL passed from the template prop
+    // Read the remote target CSV URL passed from the template prop attribute
     const remoteCsvUrl = scrollContainer.getAttribute('data-csv-url');
 
     let currentScrollTop = 0;
@@ -18,7 +20,7 @@ export function initLeaderboard() {
     let isHovered = false;
     let speedMultiplier = 1; 
 
-    // Handle user controllers (Speed, High Score Input, Themes)
+    // Handle user control panel actions (Speed, High Score Threshold, Themes)
     if (parentWrapper) {
       const speedButtons = parentWrapper.querySelectorAll('.speed-btn');
       speedButtons.forEach((btn) => {
@@ -55,12 +57,9 @@ export function initLeaderboard() {
       if (!remoteCsvUrl || isHovered) return;
 
       try {
-        // 1. CRITICAL: Remove the manual string appending separator logic completely. 
-        // Request the exact, clean URL to avoid Google's 307 redirect loops.
+        // Fetch raw URL using clean cache-control headers to prevent Google 307 redirects
         const response = await fetch(remoteCsvUrl, {
           method: 'GET',
-          // 2. FORCE CACHE BYPASS: Instructs the browser to fetch directly from the network 
-          // without triggering a 307 redirect from Google's servers.
           cache: 'no-store', 
           redirect: 'follow',
           headers: {
@@ -75,7 +74,7 @@ export function initLeaderboard() {
         
         const csvText = await response.text();
         
-        // Safety lock: Verify the response isn't a login screen html error page block
+        // Safety lock: Verify the response isn't a login screen html error panel
         if (csvText.trim().startsWith('<!DOCTYPE html>')) {
           console.error("CORS Fault: Verify your Google Sheet is still set to 'Public' and Published to Web.");
           return;
@@ -167,18 +166,27 @@ export function initLeaderboard() {
       });
     }
 
-    // Poll the raw data source every 5 minutes to keep the leaderboard updated in near real-time without needing a full page refresh.
-    const pollingInterval = setInterval(pollLiveScores, 300000);
+    // Poll the raw data source every 30 seconds
+    const pollingInterval = setInterval(pollLiveScores, 30000);
 
     // Continuous Animation Loops Frame Engine Tracking
     scrollContainer.addEventListener('mouseenter', () => { isHovered = true; lastTimestamp = null; });
     scrollContainer.addEventListener('mouseleave', () => { isHovered = false; });
 
     function step(timestamp: number) {
+      // Freeze calculations if row hover condition is active or if tracker is manually paused
       if (isHovered || speedMultiplier === 0) {
         animationFrameId = requestAnimationFrame(step);
         return;
       }
+
+      // 5-SECOND INCEPTION DELAY LOCK
+      // Keeps scrolling frozen at top ranks until 5000 milliseconds have elapsed since load
+      if (timestamp < 5000) {
+        animationFrameId = requestAnimationFrame(step);
+        return;
+      }
+
       if (!lastTimestamp) lastTimestamp = timestamp;
       const elapsedSeconds = (timestamp - lastTimestamp) / 1000;
       lastTimestamp = timestamp;
@@ -186,14 +194,18 @@ export function initLeaderboard() {
       const halfHeight = scrollContainer.scrollHeight / 2;
       currentScrollTop += (baseSpeed * speedMultiplier) * elapsedSeconds;
 
-      if (currentScrollTop >= halfHeight) currentScrollTop -= halfHeight;
+      if (currentScrollTop >= halfHeight) {
+        currentScrollTop -= halfHeight;
+      }
+
       scrollContainer.scrollTop = currentScrollTop;
       animationFrameId = requestAnimationFrame(step);
     }
 
+    // Initialize animation engine
     animationFrameId = requestAnimationFrame(step);
     
-    // Component lifecycle unmounting event listener cleanups
+    // Component lifecycle unmounting cleanup
     scrollContainer.addEventListener('destroy', () => {
       cancelAnimationFrame(animationFrameId);
       clearInterval(pollingInterval);
