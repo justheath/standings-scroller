@@ -1,71 +1,96 @@
 ---
 // src/components/BowlingLeaderboard.astro
-import '../styles/leaderboard.css'; 
+import "../styles/leaderboard.css";
 
 interface RowData {
   id: string | number;
-  rank: number;        
-  team: string;          
-  scratchTotal: number;  
-  handicapTotal: number; 
-  [key: string]: any;    
+  rank: number;
+  team: string;
+  scratchTotal: number;
+  handicapTotal: number;
+  [key: string]: any;
 }
 
 interface Props {
   data: RowData[];
-  tournamentName?: string;     
-  csvUrl: string; // Mandatory config string route parameter prop passed down
-  defaultPixelsPerSecond?: number; 
+  tournamentName?: string;
+  csvUrl: string;
+  defaultPixelsPerSecond?: number;
   rowHeightPx?: number;
-  sortByRank?: 'asc' | 'desc';
+  sortByRank?: "asc" | "desc";
   defaultHighScoreThreshold?: number;
 }
 
-const { 
-  data = [], 
-  tournamentName = "Championship Bowling Series", 
+const {
+  data = [],
+  tournamentName = "Championship Bowling Series",
   csvUrl,
-  // 🔽 Base speed, everything is multiplier on this
-  defaultPixelsPerSecond = 100, 
-  rowHeightPx = 98,            
-  sortByRank = 'asc',
-  defaultHighScoreThreshold = 250 
+  defaultPixelsPerSecond = 100, // Base line speed increased to 100px/sec
+  rowHeightPx = 98,
+  sortByRank = "asc",
+  defaultHighScoreThreshold = 250,
 } = Astro.props;
 
 const sortedData = [...data].sort((a, b) => {
-  return sortByRank === 'asc' ? a.rank - b.rank : b.rank - a.rank;
+  return sortByRank === "asc" ? a.rank - b.rank : b.rank - a.rank;
 });
 
-const allKeys = Array.from(new Set(data.flatMap(item => Object.keys(item))));
-const dynamicKeys = allKeys.filter(key => !['id', 'team', 'rank', 'scratchTotal', 'handicapTotal'].includes(key));
+const allKeys = Array.from(new Set(data.flatMap((item) => Object.keys(item))));
+const dynamicKeys = allKeys.filter(
+  (key) =>
+    !["id", "team", "rank", "scratchTotal", "handicapTotal"].includes(key),
+);
 const loopingData = [...sortedData, ...sortedData];
 ---
 
-<div class="bowling-leaderboard-wrapper theme-neon" style={`--row-height: ${rowHeightPx}px;`}>
-  
+<div
+  class="bowling-leaderboard-wrapper theme-neon"
+  style={`--row-height: ${rowHeightPx}px;`}
+>
   <!-- TOP CONTROL DASHBOARD BAR -->
   <div class="top-control-bar">
     <div class="control-left-side">
       <div class="control-group">
-        <a href={import.meta.env.BASE_URL} class="control-btn exit-hub-btn">← Back</a>
+        <a href={import.meta.env.BASE_URL} class="control-btn exit-hub-btn"
+          >← Back</a
+        >
       </div>
+
+      <!-- UPDATED SPEED CONTROLLER BAR BUTTONS -->
       <div class="control-group">
         <span class="control-label">SPEED:</span>
         <button class="control-btn speed-btn" data-multiplier="0">PAUSE</button>
-        <button class="control-btn speed-btn active" data-multiplier="1">1X</button>
+        <button class="control-btn speed-btn" data-multiplier="1">1X</button>
         <button class="control-btn speed-btn" data-multiplier="2">2X</button>
         <button class="control-btn speed-btn" data-multiplier="4">4X</button>
       </div>
+
       <div class="control-group">
-        <label class="control-label" for="high-score-input">HIGH SCORE ALERT:</label>
-        <input type="number" id="high-score-input" class="threshold-input" value={defaultHighScoreThreshold} min="0" max="300" placeholder="250" />
+        <label class="control-label" for="high-score-input"
+          >HIGH SCORE ALERT:</label
+        >
+        <input
+          type="number"
+          id="high-score-input"
+          class="threshold-input"
+          data-default-threshold={defaultHighScoreThreshold}
+          min="0"
+          max="300"
+          placeholder="250"
+        />
       </div>
     </div>
     <div class="control-group">
-      <span class="control-label">BOARD THEME:</span>
-      <button class="control-btn theme-btn active" data-theme="neon">NEON ARCADE</button>
-      <button class="control-btn theme-btn" data-theme="cyberpunk">CYBERPUNK</button>
-      <button class="control-btn theme-btn" data-theme="classic">CLASSIC ALLEY</button>
+      <span class="control-label">THEME:</span>
+      <button class="control-btn theme-btn" data-theme="neon"
+        >NEON ARCADE</button
+      >
+      <button class="control-btn theme-btn" data-theme="cyberpunk"
+        >CYBERPUNK</button
+      >
+      <button class="control-btn theme-btn" data-theme="classic"
+        >CLASSIC ALLEY</button
+      >
       <button class="control-btn theme-btn" data-theme="matrix">MATRIX</button>
     </div>
   </div>
@@ -80,45 +105,64 @@ const loopingData = [...sortedData, ...sortedData];
     <div>Rank</div>
     <div>Team Name</div>
     <div class="dynamic-values games-flex-track">
-      {dynamicKeys.map((key) => <span class={`header-game-label game-${key}`}>{key.toUpperCase()}</span>)}
+      {
+        dynamicKeys.map((key) => (
+          <span class={`header-game-label game-${key}`}>
+            {key.toUpperCase()}
+          </span>
+        ))
+      }
     </div>
     <div class="total-column scratch-header">Scratch</div>
     <div class="total-column">Handicap</div>
   </div>
 
-  <!-- SCROLLING ANIMATION FRAME TRACK -->
-  <!-- INJECTED: data-csv-url is securely mapped out to the client browser framework -->
-  <div 
-    class="autoscroll-container" 
+  <!-- SCROLLING ANIMATION TRACK -->
+  <div
+    class="autoscroll-container"
     data-base-speed={defaultPixelsPerSecond}
     data-csv-url={csvUrl}
   >
     <div class="autoscroll-track">
-      {loopingData.map((row) => (
-        <div class="autoscroll-row grid-row-layout">
-          <div><span class="rank-tag">#{row.rank}</span></div>
-          <div><strong class="row-team-text">{row.team}</strong></div>
-          <div class="dynamic-values games-flex-track">
-            {dynamicKeys.map((key) => {
-              const score = row[key];
-              const isHighScore = score >= defaultHighScoreThreshold; 
-              return score !== undefined && (
-                <span class={`variable-field game-score game-${key} ${isHighScore ? 'high-score-flash' : ''}`} data-score={score}>
-                  {score}
-                </span>
-              );
-            })}
+      {
+        loopingData.map((row) => (
+          <div class="autoscroll-row grid-row-layout">
+            <div>
+              <span class="rank-tag">#{row.rank}</span>
+            </div>
+            <div>
+              <strong class="row-team-text">{row.team}</strong>
+            </div>
+            <div class="dynamic-values games-flex-track">
+              {dynamicKeys.map((key) => {
+                const score = row[key];
+                return (
+                  score !== undefined && (
+                    <span
+                      class={`variable-field game-score game-${key}`}
+                      data-score={score}
+                    >
+                      {score}
+                    </span>
+                  )
+                );
+              })}
+            </div>
+            <div class="total-column scratch-cell">
+              <span class="scratch-total">{row.scratchTotal}</span>
+            </div>
+            <div class="total-column">
+              <strong class="handicap-total">{row.handicapTotal}</strong>
+            </div>
           </div>
-          <div class="total-column scratch-cell"><span class="scratch-total">{row.scratchTotal}</span></div>
-          <div class="total-column"><strong class="handicap-total">{row.handicapTotal}</strong></div>
-        </div>
-      ))}
+        ))
+      }
     </div>
   </div>
 </div>
 
 <script>
-  import { initLeaderboard } from '../scripts/leaderboard.ts';
+  import { initLeaderboard } from "../scripts/leaderboard.ts";
   initLeaderboard();
-  document.addEventListener('astro:after-swap', initLeaderboard);
+  document.addEventListener("astro:after-swap", initLeaderboard);
 </script>

@@ -6,86 +6,106 @@ export function initLeaderboard() {
 
   containers.forEach((container, index) => {
     const scrollContainer = container as HTMLElement;
-    const baseSpeed = Number(scrollContainer.dataset.baseSpeed) || 35; 
-    
-    // Type cast the generic Element to an HTMLElement to satisfy TypeScript
+    const baseSpeed = Number(scrollContainer.dataset.baseSpeed) || 35;
     const parentWrapper = boardWrappers[index] as HTMLElement;
-    
-    // Read the remote target CSV URL passed from the template prop attribute
     const remoteCsvUrl = scrollContainer.getAttribute('data-csv-url');
 
     let currentScrollTop = 0;
     let lastTimestamp: number | null = null;
     let animationFrameId: number;
     let isHovered = false;
-    let speedMultiplier = 1; 
 
-    // Handle user control panel actions (Speed, High Score Threshold, Themes)
+    // INITIAL STATE FALLBACK PARSING FROM LOCAL STORAGE
+    let speedMultiplier = localStorage.getItem('tickerSpeed') !== null
+      ? Number(localStorage.getItem('tickerSpeed'))
+      : 1;
+
+    let savedTheme = localStorage.getItem('tickerTheme') || 'neon';
+
+    // ----------------------------------------------------
+    // STORAGE RETRIEVAL & BUTTON UI SYNCHRONIZATION
+    // ----------------------------------------------------
     if (parentWrapper) {
-      const speedButtons = parentWrapper.querySelectorAll('.speed-btn');
-      speedButtons.forEach((btn) => {
-        btn.addEventListener('click', (e) => {
-          const target = e.currentTarget as HTMLButtonElement;
-          speedButtons.forEach(b => b.classList.remove('active'));
-          target.classList.add('active');
-          speedMultiplier = Number(target.dataset.multiplier);
-          lastTimestamp = null; 
-        });
-      });
-
-      const thresholdInput = parentWrapper.querySelector('#high-score-input') as HTMLInputElement;
-      if (thresholdInput) {
-        thresholdInput.addEventListener('input', () => updateHighScoreVisuals(parentWrapper, Number(thresholdInput.value)));
-      }
-
+      // 1. Initialize Saved Theme Setup configurations
+      parentWrapper.className = `bowling-leaderboard-wrapper theme-${savedTheme}`;
       const themeButtons = parentWrapper.querySelectorAll('.theme-btn');
       themeButtons.forEach((btn) => {
-        btn.addEventListener('click', (e) => {
+        const el = btn as HTMLButtonElement;
+        if (el.dataset.theme === savedTheme) el.classList.add('active');
+
+        el.addEventListener('click', (e) => {
           const target = e.currentTarget as HTMLButtonElement;
           themeButtons.forEach(b => b.classList.remove('active'));
           target.classList.add('active');
-          parentWrapper.className = `bowling-leaderboard-wrapper theme-${target.dataset.theme}`;
+
+          const newTheme = target.dataset.theme || 'neon';
+          parentWrapper.className = `bowling-leaderboard-wrapper theme-${newTheme}`;
+          localStorage.setItem('tickerTheme', newTheme); // Persistence Save
           lastTimestamp = null;
         });
       });
+
+      // 2. Initialize Saved Speed Buttons Setup configurations
+      const speedButtons = parentWrapper.querySelectorAll('.speed-btn');
+      speedButtons.forEach((btn) => {
+        const el = btn as HTMLButtonElement;
+        if (Number(el.dataset.multiplier) === speedMultiplier) el.classList.add('active');
+
+        el.addEventListener('click', (e) => {
+          const target = e.currentTarget as HTMLButtonElement;
+          speedButtons.forEach(b => b.classList.remove('active'));
+          target.classList.add('active');
+
+          speedMultiplier = Number(target.dataset.multiplier);
+          localStorage.setItem('tickerSpeed', String(speedMultiplier)); // Persistence Save
+          lastTimestamp = null;
+        });
+      });
+
+      // 3. Initialize High Score Alert Threshold Field Configs
+      const thresholdInput = parentWrapper.querySelector('#high-score-input') as HTMLInputElement;
+      if (thresholdInput) {
+        const defaultFallback = Number(thresholdInput.getAttribute('data-default-threshold')) || 250;
+        const savedThreshold = localStorage.getItem('tickerHighScore') !== null
+          ? Number(localStorage.getItem('tickerHighScore'))
+          : defaultFallback;
+
+        thresholdInput.value = String(savedThreshold);
+        updateHighScoreVisuals(parentWrapper, savedThreshold);
+
+        thresholdInput.addEventListener('input', () => {
+          const currentVal = Number(thresholdInput.value) || 0;
+          updateHighScoreVisuals(parentWrapper, currentVal);
+          localStorage.setItem('tickerHighScore', String(currentVal)); // Persistence Save
+        });
+      }
     }
 
     // ----------------------------------------------------
-    // LIVE STATIC HOST POLLING ENGINE
+    // BACKGROUND LIVE POLLING ENGINE
     // ----------------------------------------------------
     async function pollLiveScores() {
       if (!remoteCsvUrl || isHovered) return;
 
       try {
-        // Fetch raw URL using clean cache-control headers to prevent Google 307 redirects
         const response = await fetch(remoteCsvUrl, {
           method: 'GET',
-          cache: 'no-store', 
+          cache: 'no-store',
           redirect: 'follow',
-          headers: {
-            'Accept': 'text/csv, text/plain, */*'
-          }
+          headers: { 'Accept': 'text/csv, text/plain, */*' }
         });
 
-        if (!response.ok) {
-          console.warn(`Google Sheets connection throttled. Code: ${response.status}`);
-          return;
-        }
-        
+        if (!response.ok) return;
         const csvText = await response.text();
-        
-        // Safety lock: Verify the response isn't a login screen html error panel
-        if (csvText.trim().startsWith('<!DOCTYPE html>')) {
-          console.error("CORS Fault: Verify your Google Sheet is still set to 'Public' and Published to Web.");
-          return;
-        }
+
+        if (csvText.trim().startsWith('<!DOCTYPE html>')) return;
 
         const freshTeams = parseCsvOnClient(csvText);
         if (freshTeams.length === 0) return;
 
-        // Mirror data to account for the duplicated infinite scrolling row track canvas
         const loopingTeams = [...freshTeams, ...freshTeams];
         const uiRows = scrollContainer.querySelectorAll('.autoscroll-row');
+
         const thresholdInput = parentWrapper?.querySelector('#high-score-input') as HTMLInputElement;
         const currentThreshold = thresholdInput ? Number(thresholdInput.value) : 250;
 
@@ -105,7 +125,6 @@ export function initLeaderboard() {
           const handicapEl = rowEl.querySelector('.handicap-total');
           if (handicapEl && handicapEl.textContent !== String(teamData.handicapTotal)) handicapEl.textContent = String(teamData.handicapTotal);
 
-          // Loop over individual games dynamically (g1 to g9)
           Object.keys(teamData).forEach((key) => {
             if (!['team', 'rank', 'scratchTotal', 'handicapTotal'].includes(key)) {
               const cell = rowEl.querySelector(`.game-${key}`);
@@ -126,7 +145,6 @@ export function initLeaderboard() {
       }
     }
 
-    // Zero-dependency client-side CSV parser
     function parseCsvOnClient(text: string) {
       const lines = text.split('\n').map(line => line.trim()).filter(line => line.length > 0);
       if (lines.length < 2) return [];
@@ -137,7 +155,7 @@ export function initLeaderboard() {
       for (let i = 1; i < lines.length; i++) {
         const columns = lines[i].split(',');
         const obj: any = {};
-        
+
         headers.forEach((header, colIndex) => {
           const val = columns[colIndex];
           if (header === 'team') {
@@ -148,8 +166,6 @@ export function initLeaderboard() {
         });
         records.push(obj);
       }
-
-      // Keep rows properly ordered mathematically by rank
       return records.sort((a, b) => a.rank - b.rank);
     }
 
@@ -166,22 +182,17 @@ export function initLeaderboard() {
       });
     }
 
-    // Poll the raw data source every 30 seconds
     const pollingInterval = setInterval(pollLiveScores, 30000);
 
-    // Continuous Animation Loops Frame Engine Tracking
+    // Continuous Animation Frame Mechanics
     scrollContainer.addEventListener('mouseenter', () => { isHovered = true; lastTimestamp = null; });
     scrollContainer.addEventListener('mouseleave', () => { isHovered = false; });
 
     function step(timestamp: number) {
-      // Freeze calculations if row hover condition is active or if tracker is manually paused
       if (isHovered || speedMultiplier === 0) {
         animationFrameId = requestAnimationFrame(step);
         return;
       }
-
-      // 5-SECOND INCEPTION DELAY LOCK
-      // Keeps scrolling frozen at top ranks until 5000 milliseconds have elapsed since load
       if (timestamp < 5000) {
         animationFrameId = requestAnimationFrame(step);
         return;
@@ -194,18 +205,13 @@ export function initLeaderboard() {
       const halfHeight = scrollContainer.scrollHeight / 2;
       currentScrollTop += (baseSpeed * speedMultiplier) * elapsedSeconds;
 
-      if (currentScrollTop >= halfHeight) {
-        currentScrollTop -= halfHeight;
-      }
-
+      if (currentScrollTop >= halfHeight) currentScrollTop -= halfHeight;
       scrollContainer.scrollTop = currentScrollTop;
       animationFrameId = requestAnimationFrame(step);
     }
 
-    // Initialize animation engine
     animationFrameId = requestAnimationFrame(step);
-    
-    // Component lifecycle unmounting cleanup
+
     scrollContainer.addEventListener('destroy', () => {
       cancelAnimationFrame(animationFrameId);
       clearInterval(pollingInterval);
