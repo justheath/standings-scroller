@@ -7,6 +7,7 @@ export interface TournamentConfig {
   csvUrl: string; // The remote website URL to fetch data from
   dates: string | string[]; // New: Supports a single string range or an array of specific dates
   location: string; // New: Tracks alley/center name and city venue
+  scratchOnly: boolean;
 }
 
 // Global Site Configurations Interface
@@ -30,6 +31,7 @@ export const tournaments: TournamentConfig[] = [
       "https://docs.google.com/spreadsheets/d/e/2PACX-1vQpNlgEre6fJCkz-cGIF5sh4tRPX9S58RwazK-kVe0shUnHpDCyrH0M88AiB83bix9skBLw3hhXR428/pub?gid=1111824680&single=true&output=csv",
     dates: ["Sept 14, 2025", "Oct 12, 2025", "Nov 09, 2025"], // Array of individual event dates format
     location: "Arrowhead Lanes, Champaign, IL",
+    scratchOnly: false,
   },
   {
     slug: "baker-scotch-doubles",
@@ -39,14 +41,17 @@ export const tournaments: TournamentConfig[] = [
     csvUrl: "https://c-ubowl.com/wp-content/uploads/2026/06/bowling.csv",
     dates: "Dec 7, 2025 at 1:00 PM", // General schedule string format
     location: "Arrowhead Lanes, Champaign, IL",
+    scratchOnly: false,
   },
   {
     slug: "twin-city-cup",
     name: "Twin City Cup",
     description:
       "End of season invitational tournament featuring the bowlers with the most individual points from the regular season, competing for the prestigious Twin City Cup.",
-    csvUrl: "https://c-ubowl.com/wp-content/uploads/2026/06/bowling.csv",
+    csvUrl:
+      "https://docs.google.com/spreadsheets/d/e/2PACX-1vSHm9Gq0vXptFjXzfjM_UkLSnS5jU2IKddtnt7uQEMX3YaRv978TXFUCqMt7yB0N6sIgrx6aEX1c4Qi/pub?gid=0&single=true&output=csv",
     dates: "June 15, 2025 - June 22, 2025", // String continuous range format
     location: "Old Orchard Lanes and Links, Savoy, IL",
+    scratchOnly: true,
   },
 ];

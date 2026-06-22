@@ -1,6 +1,6 @@
-/* ----------------------------------------------------
+/* ====================================================
    THEME SCHEMES (CSS Variable Engines)
-   ---------------------------------------------------- */
+   ==================================================== */
 
 /* 1. Neon Arcade (Default) */
 .theme-neon {
@@ -13,7 +13,7 @@
   --panel-border: rgba(0, 240, 255, 0.2);
   --text-main: #ffffff;
   --text-muted: #94a3b8;
-  --font-style: 'Courier New', Courier, monospace;
+  --font-style: "Courier New", Courier, monospace;
   --header-glow: 0 4px 15px rgba(255, 42, 116, 0.3);
   --flash-glow: 0 0 14px #ff2a74;
 }
@@ -29,7 +29,7 @@
   --panel-border: rgba(255, 0, 85, 0.3);
   --text-main: #ffffff;
   --text-muted: #ffb3d1;
-  --font-style: 'Impact', sans-serif;
+  --font-style: "Impact", sans-serif;
   --header-glow: 0 4px 15px rgba(255, 0, 85, 0.4);
   --flash-glow: 0 0 14px #ffe600;
 }
@@ -37,7 +37,7 @@
 /* 3. Classic Woodpaneled Alley */
 .theme-classic {
   --bg-dark: #2d1a10;
-  --bg-stripe: #3c2417; 
+  --bg-stripe: #3c2417;
   --bg-header: #1e1008;
   --accent-pink: #d97706;
   --accent-blue: #f43f5e;
@@ -45,7 +45,7 @@
   --panel-border: rgba(217, 119, 6, 0.2);
   --text-main: #fef3c7;
   --text-muted: #d97706;
-  --font-style: 'Arial Black', sans-serif;
+  --font-style: "Arial Black", sans-serif;
   --header-glow: none;
   --flash-glow: 0 0 10px #f43f5e;
 }
@@ -56,7 +56,7 @@
   --bg-stripe: #050505;
   --bg-header: #020202;
   --accent-pink: #00ff41;
-  --accent-blue: #00ff41; 
+  --accent-blue: #00ff41;
   --accent-green: #ffffff;
   --panel-border: rgba(0, 255, 65, 0.2);
   --text-main: #00ff41;
@@ -66,9 +66,9 @@
   --flash-glow: 0 0 14px #00ff41;
 }
 
-/* ----------------------------------------------------
+/* ====================================================
    BASE INTERFACE LAYOUT SYSTEM
-   ---------------------------------------------------- */
+   ==================================================== */
 .bowling-leaderboard-wrapper {
   width: 100%;
   height: 100vh;
@@ -81,7 +81,6 @@
   transition: background-color 0.3s ease;
 }
 
-/* NEW FEATURE: Brand Tournament Banner Element */
 .tournament-title-banner {
   width: 100%;
   background: linear-gradient(180deg, #11111e 0%, #000000 100%);
@@ -99,7 +98,9 @@
   color: #ffffff;
   letter-spacing: 2px;
   text-transform: uppercase;
-  text-shadow: 0 0 10px var(--accent-blue), 0 0 20px var(--accent-blue);
+  text-shadow:
+    0 0 10px var(--accent-blue),
+    0 0 20px var(--accent-blue);
 }
 
 .top-control-bar {
@@ -114,6 +115,13 @@
   flex-wrap: wrap;
   gap: 12px;
   z-index: 12;
+}
+
+.control-left-side {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
 }
 
 .control-group {
@@ -154,6 +162,21 @@
   box-shadow: 0 0 10px var(--accent-blue);
 }
 
+.exit-hub-btn {
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  background-color: transparent;
+  border: 1px solid var(--accent-pink);
+  color: var(--accent-pink);
+}
+
+.exit-hub-btn:hover {
+  background: rgba(255, 42, 116, 0.1);
+  color: var(--accent-pink);
+  box-shadow: 0 0 10px var(--accent-pink);
+}
+
 .threshold-input {
   background: #11111a;
   border: 1px solid var(--accent-blue);
@@ -179,10 +202,9 @@
   margin: 0;
 }
 
-/* 
-   NEW FEATURE: RECONSTRUCTED CSS GRID TRACK DEFINITIONS
-   Uses dynamic template mapping columns that scale automatically if names grow.
-*/
+/* ====================================================
+   MASTER GRID DESIGN RULES (Stable Row-Alignment Base)
+   ==================================================== */
 .grid-row-layout {
   display: grid;
   align-items: center;
@@ -190,15 +212,13 @@
   padding: 0 24px;
   gap: 24px;
   width: 100%;
-  
-  /* 
-     Dynamic Grid Definitions:
-     - Rank track: Fixed 95px
-     - Team Name track: Automatically expands up to 2.5 parts of available room (minmax prevents shrinking)
-     - Game Score tracks container: Flexibly takes remaining tracking spaces
-     - Totals tracks: Fixed 165px tracks anchored tightly at the far edge
-  */
-  grid-template-columns: 95px minmax(260px, 2.5fr) minmax(200px, 4fr) 165px 165px;
+
+  /* Master Column Framework Settings: */
+  /* Rank (95px) | Team Name (minmax scale) | Games Flex Area | Scratch Total (165px) | Handicap Total (165px) */
+  grid-template-columns: 95px minmax(260px, 2.5fr) minmax(
+      200px,
+      4fr
+    ) 165px 165px;
 }
 
 .table-header {
@@ -217,7 +237,7 @@
 .autoscroll-container {
   width: 100%;
   flex-grow: 1;
-  overflow-y: hidden; 
+  overflow-y: hidden;
   background-color: var(--bg-dark);
 }
 
@@ -244,7 +264,6 @@
   border-color: var(--accent-blue);
 }
 
-/* Internal Inner Game Boxes Grid Track Blueprint */
 .games-flex-track {
   display: flex;
   gap: 16px;
@@ -256,25 +275,32 @@
   text-align: right;
 }
 
-.rank-tag { 
-  font-size: 1.55rem; 
-  color: var(--accent-pink); 
+/* ====================================================
+   TYPOGRAPHY ELEMENTS & EXTRA GLOW DESIGNS
+   ==================================================== */
+.rank-tag {
+  font-size: 1.55rem;
+  color: var(--accent-pink);
   font-weight: 700;
 }
 
-.row-team-text { 
-  font-size: 1.65rem; 
+.row-team-text {
+  font-size: 1.65rem;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.header-game-label { width: 68px; text-align: center; font-weight: bold; }
+.header-game-label {
+  width: 68px;
+  text-align: center;
+  font-weight: bold;
+}
 
 .variable-field {
-  width: 68px; 
+  width: 68px;
   text-align: center;
-  font-size: 1.5rem; 
+  font-size: 1.5rem;
   padding: 6px 0;
   font-weight: bold;
   border-radius: 6px;
@@ -292,95 +318,148 @@
 }
 
 @keyframes neonPulse {
-  from { box-shadow: 0 0 2px var(--accent-pink); }
-  to { box-shadow: var(--flash-glow); }
+  from {
+    box-shadow: 0 0 2px var(--accent-pink);
+  }
+  to {
+    box-shadow: var(--flash-glow);
+  }
 }
 
-.scratch-total { font-size: 1.55rem; color: var(--text-muted); }
+.scratch-total {
+  font-size: 1.55rem;
+  color: var(--text-muted);
+}
 
-.handicap-total { 
-  font-size: 1.85rem; 
+.handicap-total {
+  font-size: 1.85rem;
   color: var(--accent-green);
 }
 
-/* RESPONSIVE GRID LAYOUT SYSTEM BREAKPOINTS */
-/* Update the tablet section breakpoint to hide G1-G6 on narrower screens */
+.total-column {
+  font-weight: bold;
+  text-align: right;
+  box-sizing: border-box;
+}
+
+/* ====================================================
+   HIGH-DENSITY MEDIA SCREEN BREAKPOINTS (12 Games View)
+   ==================================================== */
+@media (max-width: 1600px) {
+  .grid-row-layout {
+    gap: 16px;
+    padding: 0 16px;
+  }
+  .games-flex-track {
+    gap: 10px;
+  }
+  .variable-field,
+  .header-game-label {
+    width: 60px;
+    font-size: 1.35rem;
+  }
+}
+
 @media (max-width: 1350px) {
-  .game-g1, .game-g2, .game-g3, .game-g4, .game-g5, .game-g6 { 
-    display: none !important; 
+  .row-team-text {
+    font-size: 1.4rem;
+  }
+  .variable-field,
+  .header-game-label {
+    width: 52px;
+    font-size: 1.2rem;
+  }
+  .rank-tag,
+  .scratch-total,
+  .handicap-total {
+    font-size: 1.35rem;
+  }
+}
+
+@media (max-width: 1150px) {
+  .game-g1,
+  .game-g2,
+  .game-g3 {
+    display: none !important;
   }
 }
 
 @media (max-width: 950px) {
-  .game-g6, .game-g7, .game-g8 { 
-    display: none !important; 
+  .game-g4,
+  .game-g5 {
+    display: none !important;
   }
   .grid-row-layout {
-    /* Retains Rank, Team, Game 9 cell tracking, and Handicap Total */
-    grid-template-columns: 80px minmax(180px, 2fr) minmax(68px, 1fr) 0px 130px;
-    gap: 16px;
+    grid-template-columns: 80px minmax(220px, 2.5fr) minmax(68px, 1fr) 0px 130px;
+    gap: 12px;
   }
-  .scratch-header, .scratch-cell { 
-    display: none !important; 
+  .scratch-header,
+  .scratch-cell {
+    display: none !important;
   }
 }
 
 @media (max-width: 550px) {
-  .game-g6 { display: none !important; }
+  .game-g6,
+  .game-g7,
+  .game-g8,
+  .game-g9,
+  .game-g10,
+  .game-g11,
+  .game-g12 {
+    display: none !important;
+  }
   .grid-row-layout {
     grid-template-columns: 65px 1fr 100px;
     gap: 12px;
   }
-  .games-flex-track, .dynamic-values { display: none !important; }
-  .autoscroll-row, .table-header { padding: 0 12px; }
-  .top-control-bar { justify-content: center; }
-  .tournament-heading { font-size: 1.65rem; }
-}
-
-/* Append or blend these into your src/styles/leaderboard.css stylesheet file */
-
-.top-control-bar {
-  width: 100%;
-  background-color: #000000;
-  padding: 12px 24px;
-  display: flex;
-  justify-content: space-between; /* Spreads items evenly to opposite edges */
-  align-items: center;
-  border-bottom: 1px solid var(--panel-border);
-  box-sizing: border-box;
-  flex-wrap: wrap;
-  gap: 12px;
-  z-index: 12;
-}
-
-/* Flex grouping container to sit side-by-side on the left margin */
-.control-left-side {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 16px; /* Space between back-btn, speed-btn, and high-score input */
-}
-
-/* Specific styling variants for the anchor link element */
-.exit-hub-btn {
-  text-decoration: none;
-  display: inline-flex;
-  align-items: center;
-  background-color: transparent;
-  border: 1px solid var(--accent-pink); /* Accented in Pink to distinct it from control triggers */
-  color: var(--accent-pink);
-}
-
-.exit-hub-btn:hover {
-  background: rgba(255, 42, 116, 0.1);
-  color: var(--accent-pink);
-  box-shadow: 0 0 10px var(--accent-pink);
-}
-
-/* Adjust mobile query parameters for small screens */
-@media (max-width: 550px) {
-  .top-control-bar, .control-left-side {
+  .games-flex-track,
+  .dynamic-values {
+    display: none !important;
+  }
+  .autoscroll-row,
+  .table-header {
+    padding: 0 12px;
+  }
+  .top-control-bar {
     justify-content: center;
-    text-align: center;
+  }
+  .tournament-heading {
+    font-size: 1.65rem;
+  }
+}
+
+/* ====================================================
+   MODIFIER LAYOUT OVERRIDES: SCRATCH ONLY EVENTS
+   ==================================================== */
+
+/* Keeps stable tracking grids intact, but sets the 5th handicap column completely transparent */
+/* This safely removes text and data boxes to eliminate the trailing right gap error */
+.layout-scratch-only .grid-row-layout > div:nth-child(5) {
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+/* Increases visual density weight for the main active Total Series column */
+.layout-scratch-only .scratch-total {
+  font-size: 1.85rem;
+  font-weight: bold;
+  color: var(--accent-green);
+  text-shadow: 0 0 8px rgba(57, 255, 20, 0.4);
+}
+
+/* Specific sub-breakpoint fixes to clamp the hidden column room on smaller tablets */
+@media (max-width: 950px) {
+  .layout-scratch-only .grid-row-layout {
+    grid-template-columns: 80px minmax(220px, 2.5fr) minmax(68px, 1fr) 130px;
+    gap: 12px;
+  }
+}
+
+@media (max-width: 550px) {
+  .layout-scratch-only .grid-row-layout {
+    grid-template-columns: 65px 1fr 120px;
+    gap: 12px;
   }
 }
