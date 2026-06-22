@@ -13,16 +13,16 @@ import '../styles/hub.css'; // SCALED: Imports the decoupled hub layout styles
   <body>
     <div class="hub-container">
       <h1>{siteConfig.pageTitle}</h1>
-      <div class="subtitle">Select an active tournament to launch the leaderboard</div>
+      <div class="subtitle">Select a tournament to launch the leaderboard</div>
       <div class="subtitle2">Scores may take up to 5 minutes to update</div>
-      
+
       <div class="tournament-grid">
         {tournaments.map((tournament) => (
           <a href={`${import.meta.env.BASE_URL.replace(/\/$/, '')}/standings/${tournament.slug}`} class="tournament-card">
             <div class="card-info">
               <h2>{tournament.name}</h2>
               <p>{tournament.description}</p>
-              
+
               <!-- TOURNAMENT METADATA CLUSTER -->
               <div class="metadata-row">
                 <!-- Venue Location -->
