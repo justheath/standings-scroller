@@ -1,8 +1,8 @@
 ---
 // src/pages/standings/[slug].astro
-import { parse } from "csv-parse/sync";
-import { tournaments } from "../../config/tournaments";
-import BowlingLeaderboard from "../../components/BowlingLeaderboard.astro";
+import { parse } from 'csv-parse/sync';
+import { tournaments } from '../../config/tournaments';
+import BowlingLeaderboard from '../../components/BowlingLeaderboard.astro';
 
 export async function getStaticPaths() {
   return tournaments.map((t) => ({
@@ -23,7 +23,7 @@ interface BowlingRow {
 }
 
 let sanitizedData: BowlingRow[] = [];
-let errorMessage = "";
+let errorMessage = '';
 
 try {
   // Build-time execution block mapping
@@ -48,7 +48,7 @@ try {
       handicapTotal: Number(row.handicapTotal),
     };
     Object.keys(row).forEach((key) => {
-      if (!["rank", "team", "scratchTotal", "handicapTotal"].includes(key)) {
+      if (!['rank', 'team', 'scratchTotal', 'handicapTotal'].includes(key)) {
         sanitizedRow[key] = Number(row[key]);
       }
     });

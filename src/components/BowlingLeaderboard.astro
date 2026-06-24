@@ -1,6 +1,6 @@
 ---
 // src/components/BowlingLeaderboard.astro
-import "../styles/leaderboard.css";
+import '../styles/leaderboard.css';
 
 interface RowData {
   id: string | number;
@@ -17,30 +17,30 @@ interface Props {
   csvUrl: string;
   defaultPixelsPerSecond?: number;
   rowHeightPx?: number;
-  sortByRank?: "asc" | "desc";
+  sortByRank?: 'asc' | 'desc';
   defaultHighScoreThreshold?: number;
   scratchOnly?: boolean; // 🆕 Added to component prop interface
 }
 
 const {
   data = [],
-  tournamentName = "Championship Bowling Series",
+  tournamentName = 'Championship Bowling Series',
   csvUrl,
   defaultPixelsPerSecond = 100,
   rowHeightPx = 98,
-  sortByRank = "asc",
+  sortByRank = 'asc',
   defaultHighScoreThreshold = 250,
   scratchOnly = false // 🆕 Defaults to false to protect your mixed baseline
 } = Astro.props;
 
 const sortedData = [...data].sort((a, b) => {
-  return sortByRank === "asc" ? a.rank - b.rank : b.rank - a.rank;
+  return sortByRank === 'asc' ? a.rank - b.rank : b.rank - a.rank;
 });
 
 const allKeys = Array.from(new Set(data.flatMap((item) => Object.keys(item))));
 const dynamicKeys = allKeys.filter(
   (key) =>
-    !["id", "team", "rank", "scratchTotal", "handicapTotal"].includes(key),
+    !['id', 'team', 'rank', 'scratchTotal', 'handicapTotal'].includes(key),
 );
 const loopingData = [...sortedData, ...sortedData];
 ---
@@ -106,7 +106,7 @@ const loopingData = [...sortedData, ...sortedData];
       }
     </div>
     <!-- 🆕 Renamed string header header dynamically if scratch only is running -->
-    <div class="total-column scratch-header">{"Scratch"}</div>
+    <div class="total-column scratch-header">{'Scratch'}</div>
     <!-- 🆕 Conditional evaluation logic lock wrapper -->
     {!scratchOnly && <div class="total-column">Handicap</div>}
   </div>
@@ -159,7 +159,7 @@ const loopingData = [...sortedData, ...sortedData];
 </div>
 
 <script>
-  import { initLeaderboard } from "../scripts/leaderboard.ts";
+  import { initLeaderboard } from '../scripts/leaderboard.ts';
   initLeaderboard();
-  document.addEventListener("astro:after-swap", initLeaderboard);
+  document.addEventListener('astro:after-swap', initLeaderboard);
 </script>
