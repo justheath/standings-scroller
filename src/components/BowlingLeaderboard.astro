@@ -106,7 +106,7 @@ const loopingData = [...sortedData, ...sortedData];
       }
     </div>
     <!-- 🆕 Renamed string header header dynamically if scratch only is running -->
-    <div class="total-column scratch-header">{scratchOnly ? "Total Series" : "Scratch"}</div>
+    <div class="total-column scratch-header">{"Scratch"}</div>
     <!-- 🆕 Conditional evaluation logic lock wrapper -->
     {!scratchOnly && <div class="total-column">Handicap</div>}
   </div>
@@ -136,7 +136,7 @@ const loopingData = [...sortedData, ...sortedData];
                       class={`variable-field game-score game-${key}`}
                       data-score={score}
                     >
-                      {score}
+                      {Number(score) === 0 ? ' - ' : score}
                     </span>
                   )
                 );
